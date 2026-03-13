@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Website</title>
+    <style>
+        /* Basic styling for sections */
+        .section {
+            padding: 40px 20px;
+            border-bottom: 1px solid #eee;
+        }
+        .section:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        .section-content {
+            max-width: 800px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+        .section-text {
+            flex: 2;
+        }
+        .section-image {
+            flex: 1;
+            max-width: 250px;
+        }
+        .section-image img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 8px;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Welcome to My Website</h1>
+    </header>
+
+    <main>
+        {% if sections %}
+            {% for section in sections %}
+            <section id="section-{{ section.order }}" class="section">
+                <div class="section-content">
+                    <div class="section-text">
+                        <h2>{{ section.title }}</h2>
+                        <div>{{ section.content|safe }}</div>
+                    </div>
+                    {% if section.image %}
+                    <div class="section-image">
+                        <img src="{{ section.image.url }}" alt="{{ section.title }}">
+                    </div>
+                    {% endif %}
+                </div>
+            </section>
+            {% endfor %}
+        {% else %}
+            <p>No sections have been added yet. Please add them in the admin panel.</p>
+        {% endif %}
+    </main>
+
+    <footer>
+        <p>&copy; 2025 My Website</p>
+    </footer>
+
+</body>
+</html>

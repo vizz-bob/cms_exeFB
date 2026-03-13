@@ -1,0 +1,119 @@
+{% extends "admin/base.html" %}
+
+{% block extrahead %}
+<style>
+    /* --- THEME: Midnight Slate --- */
+
+    /* BASE DARK MODE */
+    body.dark-mode {
+        background-color: #0f172a; /* Slate 900 */
+        color: #cbd5e1; /* Slate 300 - Soft Text */
+    }
+
+    /* SURFACES (Headers, Tables, Modules, Sidebars) */
+    body.dark-mode .module caption,
+    body.dark-mode #header,
+    body.dark-mode .object-tools,
+    body.dark-mode .grp-module h2,
+    body.dark-mode .grp-group h2,
+    body.dark-mode .grp-row,
+    body.dark-mode .grp-submit-row,
+    body.dark-mode .grp-changelist-results,
+    body.dark-mode .grp-table thead th,
+    body.dark-mode .grp-table tbody tr,
+    body.dark-mode .grp-form-container,
+    body.dark-mode #changelist-filter h2,
+    body.dark-mode #changelist-filter ul,
+    body.dark-mode .nav-menu-item,
+    body.dark-mode .result-list td {
+        background-color: #1e293b; /* Slate 800 */
+        color: #f1f5f9; /* Slate 100 - High contrast text */
+        border-color: #334155; /* Slate 700 */
+    }
+
+    /* LINKS */
+    body.dark-mode a {
+        color: #38bdf8; /* Sky Blue 400 */
+    }
+
+    /* INPUTS & FORM FIELDS */
+    body.dark-mode input[type="text"],
+    body.dark-mode input[type="email"],
+    body.dark-mode input[type="password"],
+    body.dark-mode input[type="number"],
+    body.dark-mode select,
+    body.dark-mode textarea {
+        background-color: #020617; /* Very dark (Slate 950) */
+        color: #f8fafc;
+        border: 1px solid #475569;
+    }
+
+    /* DASHBOARD CONTENT FIX */
+    body.dark-mode .dashboard #content {
+        background: #0f172a; 
+    }
+
+    /* BUTTONS - Primary */
+    body.dark-mode .button,
+    body.dark-mode input[type="submit"],
+    body.dark-mode .submit-row input[type="submit"] {
+        background: #3b82f6; /* Blue 500 */
+        color: white;
+        border-color: #2563eb;
+        font-weight: 600;
+    }
+
+    /* BUTTONS - Default/Secondary */
+    body.dark-mode .button.default {
+        background: #334155;
+        border-color: #334155;
+        color: #cbd5e1;
+    }
+
+    /* TABLE HOVER EFFECT */
+    body.dark-mode tbody tr:hover {
+        background-color: #334155 !important;
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        
+        function checkTheme() {
+            const hour = new Date().getHours();
+            // Define "night" hours (e.g., before 7 AM or after 7 PM)
+            const isNightTime = hour < 7 || hour >= 19; // 7 PM is 19:00
+
+            if (isNightTime) {
+                document.body.classList.add('dark-mode');
+            } else {
+                document.body.classList.remove('dark-mode');
+            }
+        }
+
+        // 1. Check immediately when page loads
+        checkTheme();
+
+        // 2. Check again every 60 seconds (60000 ms)
+        // This ensures if a user leaves the tab open, it switches automatically
+        setInterval(checkTheme, 60000);
+    });
+</script>
+{% endblock %}
+
+{% block userlinks %}
+    <a href="http://localhost:3000" target="_blank" rel="noopener noreferrer">View Site</a> /
+    {% if user.is_active and user.is_staff %}
+        {% url 'django-admindocs-docroot' as docsroot %}
+        {% if docsroot %}
+            <a href="{{ docsroot }}">Documentation</a> /
+        {% endif %}
+    {% endif %}
+    {% if user.has_usable_password %}
+        <a href="{% url 'admin:password_change' %}">Change password</a> /
+    {% endif %}
+    <form id="logout-form" method="post" action="{% url 'admin:logout' %}">
+        {% csrf_token %}
+        <button type="submit">Log out</button>
+    </form>
+{% endblock %}
