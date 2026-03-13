@@ -1,0 +1,186 @@
+name: Build Windows Installer
+
+# Triggers:
+#   - Push to main / master
+#   - Pull request against main / master
+#   - Manual "Run workflow" button in the Actions tab
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build CMS_Setup.exe
+    runs-on: windows-latest   # Free Windows Server 2022 runner
+
+    steps:
+
+      # ---------------------------------------------------------------
+      # 1. Checkout the full repo (contains cms-frontend/ & cms-backend/)
+      # ---------------------------------------------------------------
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # ---------------------------------------------------------------
+      # 2. Set up Node.js with npm cache
+      # ---------------------------------------------------------------
+      - name: Set up Node.js 18
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: cms-frontend/package-lock.json
+
+      # ---------------------------------------------------------------
+      # 3. Set up Python with pip cache
+      # ---------------------------------------------------------------
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+          cache-dependency-path: cms-backend/requirements.txt
+
+      # ---------------------------------------------------------------
+      # 4. Build React frontend
+      # ---------------------------------------------------------------
+      - name: Install frontend dependencies
+        working-directory: cms-frontend
+        run: npm install --legacy-peer-deps
+
+      - name: Build React app (production)
+        working-directory: cms-frontend
+        run: npm run build
+
+      # ---------------------------------------------------------------
+      # 5. Copy React build → cms-backend/frontend_build/
+      # ---------------------------------------------------------------
+      - name: Copy React build into Django project
+        shell: pwsh
+        run: |
+          $src  = "cms-frontend\build"
+          $dest = "cms-backend\frontend_build"
+          if (Test-Path $dest) { Remove-Item -Recurse -Force $dest }
+          Copy-Item -Recurse -Force $src $dest
+          Write-Host "Copied $src → $dest"
+
+      # ---------------------------------------------------------------
+      # 6. Install Python dependencies
+      # ---------------------------------------------------------------
+      - name: Install Python packages
+        working-directory: cms-backend
+        run: |
+          pip install -r requirements.txt
+          pip install waitress pyinstaller
+
+      # ---------------------------------------------------------------
+      # 7. Collect Django static files
+      # ---------------------------------------------------------------
+      - name: Collect Django static files
+        working-directory: cms-backend
+        shell: pwsh
+        env:
+          DJANGO_SETTINGS_MODULE: backend.settings_standalone
+          ALLOWED_HOSTS: localhost,127.0.0.1
+          DJANGO_SECRET_KEY: github-actions-build-key-not-for-production
+          CMS_BUILD_MODE: 'true'
+          CMS_BUNDLE_DIR: ${{ github.workspace }}\cms-backend
+          CMS_DATA_DIR: ${{ github.workspace }}\cms-backend\build_data
+        run: |
+          New-Item -ItemType Directory -Force -Path "build_data" | Out-Null
+          python manage.py collectstatic --noinput --verbosity=1
+          Write-Host "Static files collected → cms-backend\staticfiles\"
+          Remove-Item -Recurse -Force "build_data" -ErrorAction SilentlyContinue
+
+      # ---------------------------------------------------------------
+      # 8. Build the .exe bundle with PyInstaller
+      # ---------------------------------------------------------------
+      - name: Build with PyInstaller
+        working-directory: cms-backend
+        run: pyinstaller cms_backend.spec --clean --noconfirm
+
+      - name: Verify PyInstaller output
+        shell: pwsh
+        run: |
+          $exePath = "cms-backend\dist\CMS_Server\CMS_Server.exe"
+          if (-not (Test-Path $exePath)) {
+            Write-Error "CMS_Server.exe not found — PyInstaller build failed."
+            exit 1
+          }
+          $sizeMB = (Get-ChildItem "cms-backend\dist\CMS_Server" -Recurse |
+                     Measure-Object Length -Sum).Sum / 1MB
+          Write-Host ("Bundle size: {0:N1} MB" -f $sizeMB)
+          Write-Host "PyInstaller: OK"
+
+      # ---------------------------------------------------------------
+      # 9. Install Inno Setup 6
+      # ---------------------------------------------------------------
+      - name: Install Inno Setup 6
+        shell: pwsh
+        run: |
+          choco install innosetup --yes --no-progress
+          $iscc = "C:\Program Files (x86)\Inno Setup 6\ISCC.exe"
+          if (-not (Test-Path $iscc)) {
+            Write-Error "Inno Setup ISCC.exe not found after install."
+            exit 1
+          }
+          Write-Host "Inno Setup 6: OK"
+
+      # ---------------------------------------------------------------
+      # 10. Build the Windows installer (installer.iss is at repo root)
+      # ---------------------------------------------------------------
+      - name: Build installer with Inno Setup
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path "Output" | Out-Null
+          & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" installer.iss
+          if ($LASTEXITCODE -ne 0) {
+            Write-Error "Inno Setup exited with code $LASTEXITCODE"
+            exit 1
+          }
+
+      - name: Verify installer
+        shell: pwsh
+        run: |
+          if (-not (Test-Path "Output\CMS_Setup.exe")) {
+            Write-Error "CMS_Setup.exe not produced."
+            exit 1
+          }
+          $sizeMB = (Get-Item "Output\CMS_Setup.exe").Length / 1MB
+          Write-Host ("Installer size: {0:N1} MB" -f $sizeMB)
+          Write-Host "SUCCESS — Output\CMS_Setup.exe is ready!"
+
+      # ---------------------------------------------------------------
+      # 11. Upload installer as a downloadable artifact (30-day retention)
+      # ---------------------------------------------------------------
+      - name: Upload CMS_Setup.exe artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: CMS_Setup_Windows
+          path: Output\CMS_Setup.exe
+          retention-days: 30
+          if-no-files-found: error
+
+      # ---------------------------------------------------------------
+      # 12. Auto-create a GitHub Release when you push a version tag
+      #     Usage: git tag v1.0.0 && git push --tags
+      # ---------------------------------------------------------------
+      - name: Create GitHub Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: Output\CMS_Setup.exe
+          name: XpertAI CMS ${{ github.ref_name }}
+          body: |
+            ## XpertAI CMS ${{ github.ref_name }}
+
+            ### Installation
+            1. Download `CMS_Setup.exe` below
+            2. Run it on any Windows 10 / 11 machine (64-bit)
+            3. Launch **XpertAI CMS** from the Start Menu
+            4. Browser opens automatically at http://127.0.0.1:8000
+
+            No Python or Node.js required — everything is bundled inside.
