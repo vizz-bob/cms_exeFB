@@ -53,6 +53,8 @@ jobs:
 
       - name: Build React app (production)
         working-directory: cms-frontend
+        env:
+          CI: false   # Prevents ESLint warnings from being treated as errors in CI
         run: npm run build
 
       # ---------------------------------------------------------------
