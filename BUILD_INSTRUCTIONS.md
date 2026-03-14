@@ -46,8 +46,8 @@ When launched, `CMS_Server.exe`:
 
 ```
 cms_exe/                    ← run build_installer.bat from here
-    cms-frontend/           ← git clone https://github.com/SatiAnkur/cms-frontend
-    cms-backend/            ← git clone https://github.com/SatiAnkur/cms-backend
+    cms-frontend/           ← https://github.com/vizz-bob/cms_exeFB
+    cms-backend/            ← https://github.com/vizz-bob/cms_exeFB
     build_installer.bat     ← ← ← run this
     installer.iss
     BUILD_INSTRUCTIONS.md
@@ -56,8 +56,8 @@ cms_exe/                    ← run build_installer.bat from here
 Clone both repos if you haven't already:
 
 ```bat
-git clone https://github.com/SatiAnkur/cms-frontend
-git clone https://github.com/SatiAnkur/cms-backend
+git clone https://github.com/vizz-bob/cms_exeFB
+git clone https://github.com/vizz-bob/cms_exeFB
 ```
 
 ---
