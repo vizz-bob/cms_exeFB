@@ -149,6 +149,17 @@ _extra_hidden = [
     'botocore',
     'botocore.stub',
     'botocore.loaders',
+    # backend package — explicitly included to ensure bundling
+    'backend',
+    'backend.settings',
+    'backend.settings_standalone',
+    'backend.urls',
+    'backend.urls_standalone',
+    'backend.wsgi',
+    'backend.asgi',
+    'backend.middleware',
+    'backend.context_processors',
+    'backend.dashboard',
 ]
 
 all_hidden += _extra_hidden
