@@ -47,7 +47,7 @@ for _pkg in _packages:
         print(f"[spec] Warning: collect_all({_pkg!r}) — {_e}")
 
 # Extra data-only packages
-for _pkg in ['decouple', 'PIL', 'storages', 'boto3', 'botocore', 'waitress']:
+for _pkg in ['decouple', 'PIL', 'storages', 'boto3', 'botocore', 'waitress', 'webview']:
     try:
         all_datas += collect_data_files(_pkg)
     except Exception as _e:
@@ -191,6 +191,21 @@ _extra_hidden = [
     'pages.models', 'pages.views', 'pages.admin',
     'stakeholders.models', 'stakeholders.views', 'stakeholders.admin',
     'theme.models', 'theme.views', 'theme.admin',
+    # PyWebView — native app window
+    'webview',
+    'webview.util',
+    'webview.event',
+    'webview.menu',
+    'webview.screen',
+    'webview.window',
+    'webview.platforms',
+    'webview.platforms.winforms',
+    'webview.platforms.edgechromium',
+    'clr',
+    'System',
+    'System.Windows.Forms',
+    'System.Threading',
+    'System.Drawing',
 ]
 
 all_hidden += _extra_hidden
@@ -231,7 +246,7 @@ exe = EXE(
     bootloader_ignore_signals=False,
     strip=False,
     upx=True,
-    console=True,          # Keep console window so users can see status / errors
+    console=False,         # Hide console — app opens as native window via PyWebView
     disable_windowed_traceback=False,
     target_arch=None,
     codesign_identity=None,

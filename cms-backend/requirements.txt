@@ -26,4 +26,4 @@ whitenoise==6.11.0
 gunicorn==22.0.0
 django-storages
 boto3
- 
+pywebview>=5.0
