@@ -92,7 +92,8 @@ _project_data = [
     ('templates',                        'templates'),
     ('staticfiles',                      'staticfiles'),       # pre-collected static
     ('frontend_build',                   'frontend_build'),    # React production build
-    ('db.sqlite3',                       '.'),                 # initial database
+    # db.sqlite3 intentionally NOT bundled — app creates a fresh database on first run
+    # and auto-creates the admin superuser via create_default_superuser()
 ]
 
 for _src, _dst in _project_data:
