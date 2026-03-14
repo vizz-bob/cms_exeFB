@@ -97,6 +97,30 @@ def run_migrations():
         logging.warning(f"Migration warning (non-fatal): {exc}")
 
 
+def create_default_superuser():
+    """Create a default admin superuser on first run if none exists."""
+    try:
+        from django.contrib.auth import get_user_model
+        User = get_user_model()
+        if not User.objects.filter(is_superuser=True).exists():
+            User.objects.create_superuser(
+                username='admin',
+                email='admin@xpertai.com',
+                password='admin123',
+            )
+            logging.info("=" * 50)
+            logging.info("  Default admin account created:")
+            logging.info("    Username : admin")
+            logging.info("    Password : admin123")
+            logging.info("  Please change your password after first login!")
+            logging.info("  Admin URL: http://127.0.0.1:8000/admin/")
+            logging.info("=" * 50)
+        else:
+            logging.info("Superuser already exists — skipping creation.")
+    except Exception as exc:
+        logging.warning(f"Could not create default superuser: {exc}")
+
+
 # ---------------------------------------------------------------------------
 # Waitress server (runs in background thread)
 # ---------------------------------------------------------------------------
@@ -149,6 +173,9 @@ def main():
     # 3. Run migrations
     run_migrations()
 
+    # 3b. Create default superuser on first run
+    create_default_superuser()
+
     # 4. Start Waitress in a background daemon thread
     server_thread = threading.Thread(target=start_server, daemon=True)
     server_thread.start()
@@ -167,7 +194,7 @@ def main():
 
         window = webview.create_window(
             title='XpertAI CMS',
-            url='http://127.0.0.1:8000',
+            url='http://127.0.0.1:8000/admin/',
             width=1366,
             height=820,
             resizable=True,
@@ -184,7 +211,7 @@ def main():
         # Fallback: open in default browser if webview fails
         logging.warning(f"PyWebView failed ({e}), falling back to browser.")
         import webbrowser
-        webbrowser.open('http://127.0.0.1:8000')
+        webbrowser.open('http://127.0.0.1:8000/admin/')
         # Keep server alive until user kills the process
         try:
             while True:
