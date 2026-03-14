@@ -25,9 +25,10 @@ AppPublisherURL={#AppURL}
 AppSupportURL={#AppURL}
 AppUpdatesURL={#AppURL}
 
-; Install to Program Files
-DefaultDirName={autopf}\{#AppName}
+; Install to user's local AppData (no admin rights needed to write cms_data)
+DefaultDirName={localappdata}\{#AppName}
 DefaultGroupName={#AppName}
+PrivilegesRequired=lowest
 
 ; Output
 OutputDir=Output
@@ -79,7 +80,7 @@ Name: "{group}\{#AppName}";          Filename: "{app}\{#AppExeName}"
 Name: "{group}\Uninstall {#AppName}"; Filename: "{uninstallexe}"
 
 ; Desktop shortcut (optional)
-Name: "{commondesktop}\{#AppName}";  Filename: "{app}\{#AppExeName}"; \
+Name: "{userdesktop}\{#AppName}";  Filename: "{app}\{#AppExeName}"; \
     Tasks: desktopicon
 
 ; Startup (optional)
@@ -89,7 +90,7 @@ Name: "{userstartup}\{#AppName}";    Filename: "{app}\{#AppExeName}"; \
 
 [Registry]
 ; Register app so it appears in "Apps & features"
-Root: HKLM; Subkey: "Software\{#AppPublisher}\{#AppName}"; \
+Root: HKCU; Subkey: "Software\{#AppPublisher}\{#AppName}"; \
     ValueType: string; ValueName: "InstallDir"; ValueData: "{app}"; \
     Flags: uninsdeletekey
 
